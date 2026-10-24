@@ -1,7 +1,8 @@
 (function (global) {
   const ALLOWED_ORIGINS = Object.freeze([
     'http://localhost:5173',
-    'http://127.0.0.1:5173'
+    'http://127.0.0.1:5173',
+    'https://hide0203.github.io'
   ]);
   const PORT_NAME = 'amizone-dashboard';
   const REQUEST_TYPES = Object.freeze(['get_status', 'get_attendance']);

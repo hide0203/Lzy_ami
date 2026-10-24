@@ -58,8 +58,10 @@ The separate React/Vite dashboard reads the latest successful attendance sync di
 
 If it still reports that the extension is not detected, verify the ID in `.env.local` matches the ID on `chrome://extensions`, reload the unpacked extension after manifest changes, restart Vite, then reload the dashboard tab.
 
-The extension allows external messaging only from `http://localhost:5173` and `http://127.0.0.1:5173`. No GitHub Pages origin is configured yet. After deployment, add the exact HTTPS origin to both `extension/manifest.json` and `extension/external-api.js`, then reload the unpacked extension; do not use a wildcard.
+External messaging is limited to `http://localhost:5173`, `http://127.0.0.1:5173`, and the production dashboard origin `https://hide0203.github.io`. The manifest match includes the GitHub Pages path, while the service worker independently verifies the exact origin. The dashboard build uses the `VITE_EXTENSION_ID` GitHub Actions repository variable; it must match the extension ID shown on `chrome://extensions`.
+
+After changing extension messaging configuration, reload the unpacked extension from `chrome://extensions`. After changing the dashboard or its build-time extension ID, push the change to `main` (or run the deployment workflow manually) and reload the GitHub Pages tab after the deployment completes.
 
 If the extension is unavailable, the dashboard shows **Extension not detected** and offers JSON import as a fallback. A sync older than 24 hours is marked as potentially out of date.
 
-Build the dashboard locally with `npm run build` from the dashboard folder. No deployment is configured.
+Build the dashboard locally with `npm run build` from the dashboard folder.
