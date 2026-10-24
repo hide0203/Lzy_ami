@@ -90,6 +90,11 @@ button {
   text-align: left;
 }
 
+.screenshot-button {
+  width: auto;
+  white-space: nowrap;
+}
+
 .button-quiet:hover {
   background: #f5f7f5;
 }
@@ -161,6 +166,13 @@ button {
   margin: 14px 0 0;
   color: #495b50;
   font-size: 0.86rem;
+}
+
+.privacy-note {
+  margin: 8px 0 0;
+  color: #78827b;
+  font-size: 0.75rem;
+  line-height: 1.45;
 }
 
 .connection-status {
@@ -385,6 +397,8 @@ button {
 
   .header-actions {
     gap: 7px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .button-primary {
@@ -400,6 +414,14 @@ button {
     flex-direction: column;
     gap: 10px;
     padding: 15px;
+  }
+
+  .screenshot-review {
+    padding: 14px;
+  }
+
+  .review-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .recommendation {

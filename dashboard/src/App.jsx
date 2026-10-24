@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { calculateAttendance, DEFAULT_TARGET, validateAttendanceData } from './attendance.js';
 import { createExtensionClient, validateExtensionSnapshot } from './extensionClient.js';
+import { parseAttendanceOcr } from './screenshotOcr.js';
+import { buildScreenshotAttendance } from './screenshotImport.js';
 import { loadAttendance, loadTarget, saveAttendance, saveTarget } from './storage.js';
 
 const EMPTY_DATA = { semester: '', syncedAt: '', regular: [], flexi: [] };
@@ -68,8 +70,12 @@ export default function App() {
   const [notice, setNotice] = useState(initial.error);
   const [extensionStatus, setExtensionStatus] = useState('connecting');
   const [connectionMessage, setConnectionMessage] = useState('');
+  const [ocrMessage, setOcrMessage] = useState('');
+  const [ocrInProgress, setOcrInProgress] = useState(false);
   const fileInput = useRef(null);
+  const screenshotInput = useRef(null);
   const lastLoadedSyncRef = useRef(data.syncedAt || '');
+  const localSyncRef = useRef(data.syncedAt || '');
 
   useEffect(() => {
     let cancelled = false;
@@ -108,6 +114,10 @@ export default function App() {
           throw new Error('The extension returned an invalid sync timestamp.');
         }
         if (status.syncedAt === lastLoadedSyncRef.current) return;
+        if (localSyncRef.current && Date.parse(status.syncedAt) <= Date.parse(localSyncRef.current)) {
+          lastLoadedSyncRef.current = status.syncedAt;
+          return;
+        }
 
         const response = await client.request('get_attendance');
         if (!response || response.type !== 'attendance' || !response.data) {
@@ -118,6 +128,7 @@ export default function App() {
         if (cancelled) return;
         saveAttendance(latestData);
         lastLoadedSyncRef.current = latestData.syncedAt;
+        localSyncRef.current = latestData.syncedAt;
         setData(latestData);
         setNotice('');
       } catch (error) {
@@ -196,10 +207,94 @@ export default function App() {
       const parsed = JSON.parse(await file.text());
       const imported = validateAttendanceData(parsed);
       setData(imported);
+      localSyncRef.current = imported.syncedAt;
       setFilter('all');
       setNotice(`Imported ${imported.regular.length + imported.flexi.length} subjects.`);
     } catch (error) {
       setNotice(`Import failed: ${error.message}`);
+    }
+  }
+
+  async function importScreenshots(event) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (!files.length) return;
+    if (files.length > 5) {
+      setOcrMessage('Choose up to 5 screenshots at a time.');
+      return;
+    }
+    if (files.some((file) => !file.type.startsWith('image/'))) {
+      setOcrMessage('Choose image files, such as PNG, JPEG, or WebP screenshots.');
+      return;
+    }
+    if (files.some((file) => file.size > 15 * 1024 * 1024)) {
+      setOcrMessage('Each screenshot must be smaller than 15 MB.');
+      return;
+    }
+    if (files.reduce((total, file) => total + file.size, 0) > 25 * 1024 * 1024) {
+      setOcrMessage('Selected screenshots must total less than 25 MB.');
+      return;
+    }
+
+    setOcrInProgress(true);
+    setOcrMessage('Preparing on-device OCR…');
+
+    let worker;
+    try {
+      const { createWorker } = await import('tesseract.js');
+      worker = await createWorker('eng', 1, {
+        logger: (progress) => {
+          const percentage = Number.isFinite(progress.progress)
+            ? ` ${Math.round(progress.progress * 100)}%`
+            : '';
+          setOcrMessage(`${progress.status || 'Reading screenshot'}${percentage}`);
+        }
+      });
+
+      const recognizedTexts = [];
+      for (const file of files) {
+        const { data: result } = await worker.recognize(file);
+        recognizedTexts.push(result.text);
+      }
+
+      const parsed = parseAttendanceOcr(recognizedTexts.join('\n'));
+      if (parsed.regular.length + parsed.flexi.length === 0) {
+        setOcrMessage(
+          parsed.warnings[0] || 'No attendance rows could be read. Try a clear screenshot showing the table headings.'
+        );
+        return;
+      }
+      const imported = buildScreenshotAttendance(parsed);
+      setData(imported);
+      localSyncRef.current = imported.syncedAt;
+      lastLoadedSyncRef.current = '';
+      setFilter('all');
+      setNotice('');
+
+      const subjectCount = imported.regular.length + imported.flexi.length;
+      const flaggedCount = [...imported.regular, ...imported.flexi]
+        .filter((subject) => subject.valid === false).length;
+      const unclearCodeCount = [...imported.regular, ...imported.flexi]
+        .filter((subject) => subject.warning.includes('Course code was unclear')).length;
+      const unreadCount = parsed.warnings.length;
+      const notes = [];
+      if (flaggedCount > 0) notes.push(`${flaggedCount} ${flaggedCount === 1 ? 'row needs' : 'rows need'} attention`);
+      if (unclearCodeCount > 0) notes.push(`${unclearCodeCount} ${unclearCodeCount === 1 ? 'course code was' : 'course codes were'} unclear`);
+      if (unreadCount > 0) notes.push(`${unreadCount} ${unreadCount === 1 ? 'row could' : 'rows could'} not be read`);
+      setOcrMessage(
+        `Added ${subjectCount} subjects from the screenshot.${notes.length ? ` ${notes.join('; ')}.` : ''} Only flagged rows need checking.`
+      );
+    } catch (error) {
+      setOcrMessage(`Screenshot reading failed: ${error.message}`);
+    } finally {
+      if (worker) {
+        try {
+          await worker.terminate();
+        } catch (error) {
+          setOcrMessage(`OCR worker could not close cleanly: ${error.message}`);
+        }
+      }
+      setOcrInProgress(false);
     }
   }
 
@@ -242,6 +337,22 @@ export default function App() {
             onChange={importFile}
             aria-label="Import attendance JSON"
           />
+          <input
+            ref={screenshotInput}
+            className="visually-hidden"
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={importScreenshots}
+            aria-label="Import attendance screenshots"
+          />
+          <button
+            className="button button-quiet screenshot-button"
+            onClick={() => screenshotInput.current?.click()}
+            disabled={ocrInProgress}
+          >
+            {ocrInProgress ? 'Reading…' : 'Screenshot'}
+          </button>
           {extensionStatus !== 'connected' && (
             <button className="button button-primary" onClick={() => fileInput.current?.click()}>
               Import JSON
@@ -282,6 +393,10 @@ export default function App() {
               : connectionMessage || 'Extension not detected. Import JSON instead.'}
       </p>
       {notice && <p className="notice" role="status">{notice}</p>}
+      {ocrMessage && <p className="notice" role="status">{ocrMessage}</p>}
+      <p className="privacy-note">
+        Screenshots stay on this device. Include the table headings; use multiple screenshots if needed. OCR downloads its engine and English model from public CDNs on first use.
+      </p>
       {lastSynced && (
         <p className={`sync-time${isStale ? ' sync-stale' : ''}`}>
           {lastSynced}{isStale ? ' · Data may be out of date' : ''}
@@ -326,7 +441,7 @@ export default function App() {
         ) : (
           <section className="empty-state">
             <h2>Your attendance will appear here</h2>
-            <p>Import the JSON file exported from the Amizone extension to get started.</p>
+            <p>Connect the extension, import a JSON file, or read an attendance screenshot.</p>
           </section>
         )}
       </section>

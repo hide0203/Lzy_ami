@@ -15,7 +15,7 @@ test('parses regular and Flexi rows from OCR lines using their table headers', (
     }
   });
 
-  assert.equal(result.requiresReview, true);
+  assert.equal(result.regular.length + result.flexi.length, 3);
   assert.deepEqual(result.warnings, []);
   assert.deepEqual(result.regular.map(({ code, name, attended, total, percentage }) => ({
     code, name, attended, total, percentage
@@ -63,9 +63,57 @@ test('does not treat slash or percentage text in course names as attendance', ()
   ]);
 
   assert.equal(result.regular.length, 1);
-  assert.equal(result.regular[0].name, 'Report on 5/7 Techniques and 80 percent');
+  assert.equal(result.regular[0].name, 'Report on 5/7 Techniques and 80 Percent');
   assert.equal(result.regular[0].attended, 12);
   assert.equal(result.regular[0].total, 16);
+});
+
+test('keeps names and attendance when OCR mangles mixed-case course codes', () => {
+  const result = parseAttendanceOcr([
+    'Course Code Course Name Type Course Syllabus Session Plans Attendance',
+    'Bss3N Behavioural science-IiI (Leading Through Teams) Compulsory 4/6 (66.67)',
+    'Mci2al Cloud Computing Elective & 24/24 (100.00)',
+    'Mci4l Cloud Computing LAB Elective & 7/8 (87.50)'
+  ]);
+
+  assert.equal(result.regular.length, 3);
+  assert.deepEqual(result.regular.map(({ code, name, attended, total, valid }) => ({
+    code, name, attended, total, valid
+  })), [
+    {
+      code: '',
+      name: 'Behavioural Science-III (Leading Through Teams)',
+      attended: 4,
+      total: 6,
+      valid: true
+    },
+    {
+      code: '',
+      name: 'Cloud Computing',
+      attended: 24,
+      total: 24,
+      valid: true
+    },
+    {
+      code: '',
+      name: 'Cloud Computing LAB',
+      attended: 7,
+      total: 8,
+      valid: true
+    }
+  ]);
+  assert.equal(result.regular.every(({ warning }) => /code was unclear/i.test(warning)), true);
+});
+
+test('normalizes reliably recognized mixed-case course codes without guessing damaged codes', () => {
+  const result = parseAttendanceOcr([
+    'Course Code Course Name Type Course Syllabus Session Plans Attendance',
+    'mca302 Information Storage Management Compulsory 25/28 (89.29)'
+  ]);
+
+  assert.equal(result.regular[0].code, 'MCA302');
+  assert.equal(result.regular[0].name, 'Information Storage Management');
+  assert.equal(result.regular[0].warning, '');
 });
 
 test('warns instead of guessing when an OCR row has no recognized table header', () => {
