@@ -42,7 +42,11 @@ npm test
 
 ## Dashboard
 
-The separate React/Vite dashboard reads the latest successful attendance sync directly from the extension over Chrome external messaging. Data stays in `chrome.storage.local` and browser `localStorage`; it is not sent to a server. JSON import remains available if the extension is not detected.
+The separate React/Vite dashboard reads the latest successful attendance sync directly from the extension over Chrome external messaging. Data stays in `chrome.storage.local` and browser `localStorage`; it is not sent to a server. JSON and screenshot import are available when the extension is not detected.
+
+### Screenshot import
+
+On a phone or desktop, choose **Screenshot**, select up to five Amizone attendance screenshots, then wait for the browser OCR to finish. OCR runs in a browser worker; screenshots are not uploaded. The OCR worker and English language data download from public CDNs on first use. Recognized rows are added immediately; rows with inconsistent counts or percentages are marked for attention, and unreadable rows are reported. Check flagged results before relying on their recommendations; a blurry or cropped screenshot may omit rows.
 
 ### Local Chrome setup
 
