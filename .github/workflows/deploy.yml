@@ -36,6 +36,8 @@ jobs:
       - name: Build dashboard
         run: npm run build
         working-directory: dashboard
+        env:
+            VITE_EXTENSION_ID: ${{ vars.VITE_EXTENSION_ID }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
