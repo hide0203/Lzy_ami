@@ -1,0 +1,8 @@
+{
+  "name": "amizone-attendance-tracker-extension",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test ./tests/parser.test.js ./tests/data.test.js ./tests/external-api.test.js"
+  }
+}

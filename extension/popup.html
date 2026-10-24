@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amizone Attendance Tracker</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup-shell">
+      <header class="header">
+        <div>
+          <p class="eyebrow">Attendance</p>
+          <h1>Amizone Attendance Tracker</h1>
+        </div>
+      </header>
+
+      <section id="page-state" class="status-box neutral">
+        <strong>Current page:</strong>
+        <span id="page-status">Checking…</span>
+      </section>
+
+      <button id="sync-button" class="primary-button">Sync Attendance</button>
+      <button id="export-button" class="export-button hidden" type="button">Export JSON</button>
+
+      <section id="result-summary" class="summary hidden">
+        <div class="summary-row">
+          <span>Regular</span>
+          <strong id="regular-count">0</strong>
+        </div>
+        <div class="summary-row">
+          <span>Flexi</span>
+          <strong id="flexi-count">0</strong>
+        </div>
+      </section>
+
+      <div id="loading" class="loader hidden">Extracting attendance…</div>
+      <div id="error-box" class="message-box error hidden"></div>
+      <div id="success-box" class="message-box success hidden"></div>
+      <div id="warning-box" class="message-box warning hidden"></div>
+
+      <section id="preview-panel" class="preview hidden">
+        <h2>Extracted data</h2>
+        <ul id="preview-list"></ul>
+      </section>
+    </main>
+
+    <script src="data.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

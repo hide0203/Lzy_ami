@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Amizone Attendance Tracker",
+  "version": "0.1.0",
+  "description": "Sync attendance from the Amizone My Courses page and preview the extracted data.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["https://s.amizone.net/*"],
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:5173/*",
+      "http://127.0.0.1:5173/*"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://s.amizone.net/*"],
+      "js": ["parser.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Amizone Attendance Tracker",
+    "default_popup": "popup.html"
+  }
+}
