@@ -168,6 +168,30 @@ button {
   font-size: 0.86rem;
 }
 
+.screenshot-help {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid #e3e8e4;
+  border-radius: 8px;
+  background: #fff;
+  color: #495b50;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.screenshot-help h2 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.screenshot-help ol {
+  display: grid;
+  gap: 5px;
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
 .privacy-note {
   margin: 8px 0 0;
   color: #78827b;

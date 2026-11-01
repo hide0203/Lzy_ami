@@ -481,6 +481,15 @@ export default function App() {
               ? `Extension data unavailable. ${connectionMessage}`
               : connectionMessage || 'Extension not detected. Import JSON instead.'}
       </p>
+      <section className="screenshot-help" aria-labelledby="screenshot-help-title">
+        <h2 id="screenshot-help-title">Import attendance from your phone</h2>
+        <ol>
+          <li>In Chrome, open the menu (⋮) and turn on <strong>Desktop site</strong>.</li>
+          <li>Log in to Amizone, then open <strong>My Courses</strong>.</li>
+          <li>Zoom out until the attendance tables are easy to capture. Take screenshots that include the table headings and attendance column. If needed, take more than one screenshot.</li>
+          <li>Return to this page, tap <strong>Screenshot</strong>, and choose the screenshots to upload.</li>
+        </ol>
+      </section>
       {notice && <p className="notice" role="status">{notice}</p>}
       {ocrMessage && <p className="notice" role="status">{ocrMessage}</p>}
       {ocrDiagnostic && (
