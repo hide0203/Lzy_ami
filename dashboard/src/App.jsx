@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { calculateAttendance, DEFAULT_TARGET, validateAttendanceData } from './attendance.js';
 import { createExtensionClient, validateExtensionSnapshot } from './extensionClient.js';
-import { parseAttendanceOcr } from './screenshotOcr.js';
-import { buildScreenshotAttendance } from './screenshotImport.js';
+import {
+  parseAttendanceOcr,
+  parseAttendanceOcrRows,
+  prepareScreenshotForOcr
+} from './screenshotOcr.js';
+import {
+  buildScreenshotAttendance,
+  combineScreenshotOcrPasses,
+  mergeScreenshotParseResults
+} from './screenshotImport.js';
 import { loadAttendance, loadTarget, saveAttendance, saveTarget } from './storage.js';
 
 const EMPTY_DATA = { semester: '', syncedAt: '', regular: [], flexi: [] };
@@ -71,6 +79,7 @@ export default function App() {
   const [extensionStatus, setExtensionStatus] = useState('connecting');
   const [connectionMessage, setConnectionMessage] = useState('');
   const [ocrMessage, setOcrMessage] = useState('');
+  const [ocrDiagnostic, setOcrDiagnostic] = useState('');
   const [ocrInProgress, setOcrInProgress] = useState(false);
   const fileInput = useRef(null);
   const screenshotInput = useRef(null);
@@ -251,13 +260,93 @@ export default function App() {
         }
       });
 
-      const recognizedTexts = [];
-      for (const file of files) {
-        const { data: result } = await worker.recognize(file);
-        recognizedTexts.push(result.text);
+      const parsedScreenshots = [];
+      for (const [imageIndex, file] of files.entries()) {
+        setOcrMessage(`Improving screenshot clarity: ${file.name}`);
+        const prepared = await prepareScreenshotForOcr(file);
+        if (prepared.rows.length > 0) {
+          await worker.setParameters({ tessedit_pageseg_mode: '6' });
+          const recognizedRows = [];
+          for (const [rowIndex, row] of prepared.rows.entries()) {
+            setOcrMessage(`Reading screenshot ${imageIndex + 1}, row ${rowIndex + 1} of ${prepared.rows.length}`);
+            const { data: result } = await worker.recognize(row.image, {}, {
+              text: true,
+              blocks: true
+            });
+            let nameResult = result;
+            if (
+              row.category === 'Regular'
+              && /-\s*[1Iil|]{1,3}(?=\s|[)(]|$)(?!\s*-)/i.test(result.text)
+            ) {
+              await worker.setParameters({ tessedit_pageseg_mode: '11' });
+              const { data: alternate } = await worker.recognize(row.image, {}, {
+                text: true,
+                blocks: true
+              });
+              if (alternate.text.trim()) nameResult = alternate;
+              await worker.setParameters({ tessedit_pageseg_mode: '6' });
+            }
+            const primaryWords = (result.blocks || []).flatMap((block) => (
+              block.paragraphs || []
+            ).flatMap((paragraph) => (
+              paragraph.lines || []
+            ).flatMap((line) => line.words || [])));
+            const words = (nameResult.blocks || []).flatMap((block) => (
+              block.paragraphs || []
+            ).flatMap((paragraph) => (
+              paragraph.lines || []
+            ).flatMap((line) => line.words || [])));
+            const attendanceBandHeight = row.attendanceYBottom - row.attendanceYTop;
+            const rowWords = words.filter((word) => (
+              word.bbox.y1 >= row.attendanceYTop - attendanceBandHeight * 0.25
+            ));
+            const attendanceWords = primaryWords.filter((word) => (
+              word.bbox.y1 >= row.attendanceYTop - attendanceBandHeight * 0.25
+            ));
+            recognizedRows.push({
+              category: row.category,
+              text: result.text,
+              attendanceText: attendanceWords
+                .filter((word) => word.bbox.x0 >= row.image.width * 0.82)
+                .map((word) => word.text)
+                .join(' '),
+              words: rowWords,
+              attendanceYTop: row.attendanceYTop,
+              attendanceYBottom: row.attendanceYBottom,
+              imageWidth: row.image.width
+            });
+          }
+          parsedScreenshots.push({
+            ...parseAttendanceOcrRows(recognizedRows),
+            pageSegMode: 'row-focused',
+            text: recognizedRows.map(({ text, attendanceText }) => (
+              `${text.trim()}\nAttendance cell: ${attendanceText}`
+            )).join('\n\n'),
+            imageIndex
+          });
+        } else {
+          const parsedPasses = [];
+          for (const pageSegMode of ['11', '6', '4']) {
+            setOcrMessage(`Reading screenshot: ${file.name}`);
+            await worker.setParameters({ tessedit_pageseg_mode: pageSegMode });
+            const { data: result } = await worker.recognize(prepared.image);
+            parsedPasses.push({
+              ...parseAttendanceOcr(result.text),
+              text: result.text,
+              pageSegMode,
+              imageIndex
+            });
+          }
+          parsedScreenshots.push(combineScreenshotOcrPasses(parsedPasses));
+        }
       }
 
-      const parsed = parseAttendanceOcr(recognizedTexts.join('\n'));
+      const parsed = mergeScreenshotParseResults(parsedScreenshots);
+      const diagnosticText = parsedScreenshots
+        .map((candidate, index) => `Screenshot ${index + 1} (OCR mode ${candidate.pageSegMode}):\n${candidate.text || ''}`)
+        .join('\n\n')
+        .slice(0, 12000);
+      setOcrDiagnostic(diagnosticText);
       if (parsed.regular.length + parsed.flexi.length === 0) {
         setOcrMessage(
           parsed.warnings[0] || 'No attendance rows could be read. Try a clear screenshot showing the table headings.'
@@ -394,6 +483,14 @@ export default function App() {
       </p>
       {notice && <p className="notice" role="status">{notice}</p>}
       {ocrMessage && <p className="notice" role="status">{ocrMessage}</p>}
+      {ocrDiagnostic && (
+        <details className="ocr-diagnostic">
+          <summary>Show text recognized from screenshot</summary>
+          <p>Only visible here on this device. You can copy it and share it after removing personal details.</p>
+          <textarea readOnly value={ocrDiagnostic} rows={10} aria-label="Text recognized from screenshot" />
+          {ocrDiagnostic.length === 12000 && <p>Text preview shortened to 12,000 characters.</p>}
+        </details>
+      )}
       <p className="privacy-note">
         Screenshots stay on this device. Include the table headings; use multiple screenshots if needed. OCR downloads its engine and English model from public CDNs on first use.
       </p>
