@@ -15,6 +15,17 @@ import { loadAttendance, loadTarget, saveAttendance, saveTarget } from './storag
 
 const EMPTY_DATA = { semester: '', syncedAt: '', regular: [], flexi: [] };
 const EXTENSION_ID = import.meta.env?.VITE_EXTENSION_ID || '';
+const THEME_STORAGE_KEY = 'amizone-attendance-theme';
+
+function getInitialTheme() {
+  try {
+    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+  } catch {
+    // Use the system preference when local storage is unavailable.
+  }
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
 
 function getInitialData() {
   try {
@@ -74,6 +85,7 @@ export default function App() {
       return DEFAULT_TARGET;
     }
   });
+  const [theme, setTheme] = useState(getInitialTheme);
   const [filter, setFilter] = useState('all');
   const [notice, setNotice] = useState(initial.error);
   const [extensionStatus, setExtensionStatus] = useState('connecting');
@@ -85,6 +97,14 @@ export default function App() {
   const screenshotInput = useRef(null);
   const lastLoadedSyncRef = useRef(data.syncedAt || '');
   const localSyncRef = useRef(data.syncedAt || '');
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute(
+      'content',
+      theme === 'dark' ? '#111714' : '#f7f8f7'
+    );
+  }, [theme]);
 
   useEffect(() => {
     let cancelled = false;
@@ -204,6 +224,16 @@ export default function App() {
       saveTarget(value);
     } catch (error) {
       setNotice(`Could not save the target: ${error.message}`);
+    }
+  }
+
+  function toggleTheme() {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    } catch (error) {
+      setNotice(`Theme changed, but the preference could not be saved: ${error.message}`);
     }
   }
 
@@ -418,6 +448,15 @@ export default function App() {
           <p>Target: {target}%{data.semester ? ` · ${data.semester}` : ''}</p>
         </div>
         <div className="header-actions">
+          <button
+            className="button button-quiet theme-button"
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-pressed={theme === 'dark'}
+          >
+            {theme === 'dark' ? '☀ Light' : '☾ Dark'}
+          </button>
           <input
             ref={fileInput}
             className="visually-hidden"

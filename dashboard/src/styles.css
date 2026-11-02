@@ -1,7 +1,33 @@
 :root {
+  color-scheme: light;
+  --page-bg: #f7f8f7;
+  --surface: #fff;
+  --surface-muted: #fafbfa;
+  --text: #202724;
+  --text-strong: #303a34;
+  --text-secondary: #69746d;
+  --text-muted: #78827b;
+  --border: #e3e8e4;
+  --border-strong: #d9e0db;
+  --control-bg: #edf0ed;
+  --control-hover: #f5f7f5;
+  --control-active: #fff;
+  --quiet-text: #303a34;
+  --button-primary: #315f48;
+  --button-primary-hover: #284e3b;
+  --green: #38694c;
+  --green-soft: #f0f2f0;
+  --red: #a33d37;
+  --amber: #86621d;
+  --stale: #8a6728;
+  --neutral: #59655e;
+  --dot: #aab2ac;
+  --dot-connected: #43815a;
+  --shadow: rgb(25 40 30 / 8%);
+  --active-shadow: rgb(23 35 27 / 8%);
   font-family: Inter, "Segoe UI", Arial, sans-serif;
-  color: #202724;
-  background: #f7f8f7;
+  color: var(--text);
+  background: var(--page-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -10,14 +36,45 @@
   font-weight: 400;
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page-bg: #111714;
+  --surface: #1c2420;
+  --surface-muted: #202a24;
+  --text: #edf3ee;
+  --text-strong: #e1e9e3;
+  --text-secondary: #b0bbb3;
+  --text-muted: #9daaa1;
+  --border: #35423a;
+  --border-strong: #425147;
+  --control-bg: #26312a;
+  --control-hover: #2b362f;
+  --control-active: #344238;
+  --quiet-text: #e1e9e3;
+  --button-primary: #477c5d;
+  --button-primary-hover: #558c6b;
+  --green: #9ad5ac;
+  --green-soft: #2d3b32;
+  --red: #ff9a91;
+  --amber: #e8c879;
+  --stale: #e4c078;
+  --neutral: #c0cbc3;
+  --dot: #77847b;
+  --dot-connected: #72c28d;
+  --shadow: rgb(0 0 0 / 28%);
+  --active-shadow: rgb(0 0 0 / 24%);
+}
+
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  background: var(--page-bg);
 }
 
 button,
@@ -41,7 +98,7 @@ button {
   justify-content: space-between;
   gap: 20px;
   padding-bottom: 25px;
-  border-bottom: 1px solid #e5e9e6;
+  border-bottom: 1px solid var(--border);
 }
 
 .brand h1 {
@@ -54,7 +111,7 @@ button {
 .brand p,
 .sync-time {
   margin: 6px 0 0;
-  color: #68736d;
+  color: var(--text-secondary);
   font-size: 0.88rem;
 }
 
@@ -75,18 +132,18 @@ button {
 
 .button-primary {
   color: #fff;
-  background: #315f48;
+  background: var(--button-primary);
 }
 
 .button-primary:hover {
-  background: #284e3b;
+  background: var(--button-primary-hover);
 }
 
 .button-quiet {
   width: 100%;
-  border-color: #e0e5e1;
-  background: #fff;
-  color: #303a34;
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--quiet-text);
   text-align: left;
 }
 
@@ -95,8 +152,13 @@ button {
   white-space: nowrap;
 }
 
+.theme-button {
+  width: auto;
+  white-space: nowrap;
+}
+
 .button-quiet:hover {
-  background: #f5f7f5;
+  background: var(--control-hover);
 }
 
 .button:disabled {
@@ -111,7 +173,7 @@ button {
 .settings summary {
   list-style: none;
   padding: 9px 4px;
-  color: #4f5a54;
+  color: var(--text-secondary);
   font-size: 0.88rem;
   cursor: pointer;
 }
@@ -138,10 +200,10 @@ button {
   width: 225px;
   gap: 10px;
   padding: 15px;
-  border: 1px solid #e2e7e3;
+  border: 1px solid var(--border);
   border-radius: 9px;
-  background: #fff;
-  box-shadow: 0 8px 24px rgb(25 40 30 / 8%);
+  background: var(--surface);
+  box-shadow: 0 8px 24px var(--shadow);
 }
 
 .settings-panel label {
@@ -158,23 +220,23 @@ button {
 .target-control input {
   width: 80px;
   padding: 8px;
-  border: 1px solid #d9e0db;
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
 }
 
 .notice {
   margin: 14px 0 0;
-  color: #495b50;
+  color: var(--text-secondary);
   font-size: 0.86rem;
 }
 
 .screenshot-help {
   margin-top: 16px;
   padding: 14px 16px;
-  border: 1px solid #e3e8e4;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
-  color: #495b50;
+  background: var(--surface);
+  color: var(--text-secondary);
   font-size: 0.82rem;
   line-height: 1.5;
 }
@@ -194,7 +256,7 @@ button {
 
 .privacy-note {
   margin: 8px 0 0;
-  color: #78827b;
+  color: var(--text-muted);
   font-size: 0.75rem;
   line-height: 1.45;
 }
@@ -204,13 +266,13 @@ button {
   gap: 8px;
   margin-top: 12px;
   padding: 12px;
-  border: 1px solid #e3e8e4;
+  border: 1px solid var(--border);
   border-radius: 7px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .ocr-diagnostic summary {
-  color: #45524a;
+  color: var(--text-secondary);
   font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
@@ -218,7 +280,7 @@ button {
 
 .ocr-diagnostic p {
   margin: 0;
-  color: #69746d;
+  color: var(--text-secondary);
   font-size: 0.76rem;
   line-height: 1.4;
 }
@@ -227,10 +289,10 @@ button {
   width: 100%;
   min-height: 150px;
   padding: 8px;
-  border: 1px solid #d9e0db;
+  border: 1px solid var(--border-strong);
   border-radius: 5px;
-  color: #303a34;
-  background: #fafbfa;
+  color: var(--text-strong);
+  background: var(--surface-muted);
   font: 0.76rem/1.4 ui-monospace, Consolas, monospace;
   resize: vertical;
 }
@@ -240,7 +302,7 @@ button {
   align-items: flex-start;
   gap: 7px;
   margin: 14px 0 0;
-  color: #69746d;
+  color: var(--text-secondary);
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -251,19 +313,19 @@ button {
   height: 7px;
   margin-top: 4px;
   border-radius: 50%;
-  background: #aab2ac;
+  background: var(--dot);
 }
 
 .connection-connected .connection-dot {
-  background: #43815a;
+  background: var(--dot-connected);
 }
 
 .connection-missing .connection-dot {
-  background: #aab2ac;
+  background: var(--dot);
 }
 
 .connection-error .connection-dot {
-  background: #a33d37;
+  background: var(--red);
 }
 
 .sync-time {
@@ -272,7 +334,7 @@ button {
 }
 
 .sync-time.sync-stale {
-  color: #8a6728;
+  color: var(--stale);
 }
 
 .subject-section {
@@ -299,7 +361,7 @@ button {
   gap: 4px;
   padding: 3px;
   border-radius: 8px;
-  background: #edf0ed;
+  background: var(--control-bg);
 }
 
 .filter {
@@ -307,14 +369,14 @@ button {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #5d6861;
+  color: var(--text-secondary);
   font-size: 0.8rem;
 }
 
 .filter.active {
-  background: #fff;
-  color: #28342c;
-  box-shadow: 0 1px 2px rgb(23 35 27 / 8%);
+  background: var(--control-active);
+  color: var(--text-strong);
+  box-shadow: 0 1px 2px var(--active-shadow);
 }
 
 .subject-list {
@@ -332,9 +394,9 @@ button {
   gap: 20px;
   min-height: 90px;
   padding: 17px 19px;
-  border: 1px solid #e3e8e4;
+  border: 1px solid var(--border);
   border-radius: 9px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .subject-heading {
@@ -353,8 +415,8 @@ button {
 .flexi-label {
   padding: 2px 6px;
   border-radius: 4px;
-  background: #f0f2f0;
-  color: #68736d;
+  background: var(--green-soft);
+  color: var(--text-secondary);
   font-size: 0.68rem;
 }
 
@@ -363,12 +425,12 @@ button {
   flex-wrap: wrap;
   gap: 8px 13px;
   margin: 7px 0 0;
-  color: #69746d;
+  color: var(--text-secondary);
   font-size: 0.8rem;
 }
 
 .course-code {
-  color: #88918b;
+  color: var(--text-muted);
   font-size: 0.75rem;
 }
 
@@ -376,32 +438,32 @@ button {
   flex: 0 0 auto;
   max-width: 300px;
   margin: 0;
-  color: #38694c;
+  color: var(--green);
   font-size: 0.88rem;
   font-weight: 600;
   text-align: right;
 }
 
 .subject-below-target .recommendation {
-  color: #a33d37;
+  color: var(--red);
 }
 
 .subject-at-target .recommendation,
 .subject-no-buffer .recommendation {
-  color: #86621d;
+  color: var(--amber);
 }
 
 .subject-no-classes .recommendation,
 .subject-invalid .recommendation {
-  color: #68736d;
+  color: var(--text-secondary);
 }
 
 .empty-filter {
   padding: 20px;
-  border: 1px solid #e3e8e4;
+  border: 1px solid var(--border);
   border-radius: 9px;
-  background: #fff;
-  color: #59655e;
+  background: var(--surface);
+  color: var(--neutral);
   text-align: center;
 }
 
@@ -410,9 +472,9 @@ button {
   justify-items: center;
   gap: 10px;
   padding: 58px 20px;
-  border: 1px solid #e3e8e4;
+  border: 1px solid var(--border);
   border-radius: 9px;
-  background: #fff;
+  background: var(--surface);
   text-align: center;
 }
 
@@ -424,7 +486,7 @@ button {
 .empty-state p {
   max-width: 360px;
   margin: 0 0 6px;
-  color: #69746d;
+  color: var(--text-secondary);
   font-size: 0.88rem;
   line-height: 1.5;
 }
