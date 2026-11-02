@@ -22,9 +22,9 @@ function getInitialTheme() {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
   } catch {
-    // Use the system preference when local storage is unavailable.
+    // Fall back to the default theme when local storage is unavailable.
   }
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 }
 
 function getInitialData() {
